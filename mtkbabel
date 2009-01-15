@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2007 Niccolo Rigacci
+# Copyright (C) 2007, 2008 Niccolo Rigacci
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,10 +18,10 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.6     2008-02-07
+# Version:      0.7	2008-06-17
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
-# Tested to work with i-Blue 747 GPS data logger.
+# Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
 #
 
 use strict;
@@ -29,7 +29,7 @@ use strict;
 use File::Basename;
 # Use the getopts() function.
 use Getopt::Std;
-use vars qw($opt_a $opt_b $opt_d $opt_E $opt_f $opt_h $opt_l $opt_m $opt_o $opt_p $opt_r $opt_t $opt_v $opt_w);
+use vars qw($opt_a $opt_b $opt_d $opt_E $opt_f $opt_h $opt_l $opt_m $opt_o $opt_p $opt_R $opt_r $opt_s $opt_t $opt_v $opt_w);
 # Install the libdevice-serialport-perl Debian package.
 use Device::SerialPort;
 # Install the libtimedate-perl Debian package.
@@ -51,6 +51,7 @@ my $LOG_DEBUG   = 7;
 my $SIZEOF_BYTE   = 1;
 my $SIZEOF_WORD   = 2;
 my $SIZEOF_LONG   = 4;
+my $SIZEOF_FLOAT3 = 3;
 my $SIZEOF_FLOAT  = 4;
 my $SIZEOF_DOUBLE = 8;
 
@@ -84,6 +85,7 @@ my $LOG_STATUS_DISABLE        = 0x0200; # Device entered DISABLE_LOG state (fail
 my $LOG_STATUS_NEED_FORMAT    = 0x0400; # Flash memory need format
 my $LOG_STATUS_FULL           = 0x0800; # Flash memory is full
 
+# Default data types.
 my $SIZEOF_LOG_UTC         = $SIZEOF_LONG;
 my $SIZEOF_LOG_VALID       = $SIZEOF_WORD;
 my $SIZEOF_LOG_LATITUDE    = $SIZEOF_DOUBLE;
@@ -150,11 +152,15 @@ my $TIMEOUT = 5;
 # Timeout for activity on device port (msec).
 my $TIMEOUT_IDLE_PORT = 5000;
 
+# Is there a char "*" separator between data and checksum?
+my $LOG_HAS_CHECKSUM_SEPARATOR = 1;
+
 #-------------------------------------------------------------------------
 # Global variablee.
 #-------------------------------------------------------------------------
-my $debug = $LOG_ERR;         # Default loggin level.
-my $port  = '/dev/ttyUSB0';   # Default communication port.
+my $debug    = $LOG_ERR;         # Default loggin level.
+my $port     = '/dev/ttyUSB0';   # Default communication port.
+my $baudrate = 115200;           # Default port speed.
 
 # GPX global values.
 my $gpx_trk_minlat =   90.0;
@@ -185,6 +191,7 @@ my $fp;
 my $fp_log;
 my $offset;
 my $non_written_sector_found;
+my $next_data_force_waypoint;
 
 # Record values.
 my $record_utc;
@@ -209,28 +216,38 @@ my $record_distance;
 #-------------------------------------------------------------------------
 # Get options from command line.
 #-------------------------------------------------------------------------
-if (! getopts('ab:d:Ef:hl:m:o:p:r:tvw') or $opt_h) {
+if (! getopts('ab:d:Ef:hl:m:o:p:Rr:s:tvw') or $opt_h) {
     my $str1 = describe_log_format(0x00fff);
     my $str2 = describe_log_format(0xff000);
     print <<HELP;
 Usage: $NAME [options]
 Options:
-    -p port                  Communication port, default: $port
-    -f filename              Base name for saved files (.bin and .gpx)
-    -w                       Create a gpx file with waypoints
-    -t                       Create a gpx file with tracks
     -a                       Read all the log memory (overlapped data)
+    -b filename.bin          Do not read device, read a previously saved .bin file
+    -d debug_level           Debug level: 0..7
     -E                       Erase data log memory
+    -f filename              Base name for saved files (.bin and .gpx)
+    -h                       Print this message and exit
     -l {on|off}              Turn loggin ON/OFF
     -m {stop|overlap}        Set STOP/OVERLAP recording method on memory full
-    -r time:distance:speed   Set logging criteria (zero to disable):
-                             every 1-999 seconds, every 10-9999 meters, over 10-999 km/h
     -o log_format            Enable or disable log fields (FIELD1,-FIELD2,...), available fields:
                              $str1
                              $str2
-    -b filename.bin          Do not read device, read a previously saved .bin file
-    -d debug_level           Debug level: 0..7
+    -p port                  Communication port, default: $port
+    -R                       Recover from disabled log: erase data and reset recording criteria
+    -r time:distance:speed   Set logging criteria (zero to disable):
+                             every 1-999 seconds, every 10-9999 meters, over 10-999 km/h
+    -s speed                 Serial port speed, default $baudrate baud
+    -t                       Create a gpx file with tracks
     -v                       Print MTKBabel version and exit
+    -w                       Create a gpx file with waypoints
+
+Example:
+    Download traks and waypoints from GPS device, creating the
+    following files: gpsdata.bin, gpsdata_trk.gpx and gpsdata_wpt.gpx.
+
+    mtkbabel -s 115200 -f gpsdata -t -w
+
 HELP
     exit(1)
 }
@@ -238,11 +255,13 @@ HELP
 #-------------------------------------------------------------------------
 # Check command line options.
 #-------------------------------------------------------------------------
-if ($opt_v) { print "\nMTKBabel Version 0.6\n\n"; exit }
-$debug = $opt_d if (defined($opt_d) and ($opt_d >= $LOG_EMERG) and ($opt_d <= $LOG_DEBUG));
-$port  = $opt_p if (defined($opt_p));
-$opt_f = substr($opt_f, 0, -4) if (substr($opt_f, -4) eq '.bin');
-$opt_b = substr($opt_b, 0, -4) if (substr($opt_b, -4) eq '.bin');
+if ($opt_v) { print "\nMTKBabel Version 0.7\n\n"; exit }
+$debug    = $opt_d if (defined($opt_d) and ($opt_d >= $LOG_EMERG) and ($opt_d <= $LOG_DEBUG));
+$port     = $opt_p if (defined($opt_p));
+$baudrate = int($opt_s) if (defined($opt_s));
+$opt_f    = substr($opt_f, 0, -4) if (substr($opt_f, -4) eq '.bin');
+$opt_b    = substr($opt_b, 0, -4) if (substr($opt_b, -4) eq '.bin');
+
 
 #-------------------------------------------------------------------------
 # Do not open the device, read instead an existing binary log file.
@@ -261,7 +280,7 @@ if ($opt_b) {
 #-------------------------------------------------------------------------
 # Initialize the device port.
 #-------------------------------------------------------------------------
-serial_port_open($port);
+serial_port_open($port, $baudrate);
 
 # Do not write the log file yet.
 undef($fp_log);
@@ -278,21 +297,43 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
     $version = $1;
 }
 
-# Query firmware release (PMTK_Q_RELEASE).
+# Query firmware release (PMTK_Q_RELEASE). Examples:
+#
+# ???			PMTK705,M-core_1.8,0001
+# 747 ???		PMTK705,B-core_1.1,0002,TSI_747CD,1.0
+# 747 ???		PMTK705,B-core_1.1,0004,TSI747CD,1.0
+# ???			PMTK705,M-core_1.85,0008
+# i-Blue 747		PMTK705,M-core_1.94,001B
+# Holux M-241		PMTK705,B-core_1.1,0021,01017-00C,1.0
+# Holux M-241		PMTK705,B-core_1.20,0023,01017-00D,1.0
+#
 packet_send('PMTK605');
 $ret = packet_wait('PMTK705,');
-if ($ret =~ m/PMTK705,([\.0-9A-Za-z_-]+),([0-9A-Za-z]+)\*/) {
+if ($ret =~ m/PMTK705,([\.0-9A-Za-z_-]+),([0-9A-Za-z]+)[,\*]/) {
     $release  = $1;
     $model_id = $2;
 }
 
 printf "MTK Firmware: Version: $version, Release: $release, Model ID: $model_id\n";
+set_data_types($model_id);
 
 #-------------------------------------------------------------------------
 # Erase memory.
 #-------------------------------------------------------------------------
 if ($opt_E) {
     printf(">> Erasing log memory...\n");
+    packet_send('PMTK182,6,1');
+    packet_wait('PMTK001,182,6,3', 20);
+}
+
+#-------------------------------------------------------------------------
+# Recover from disable log: ENABLE LOG and FORMAT LOG ALL.
+# Also reset recording criteria.
+#-------------------------------------------------------------------------
+if ($opt_R) {
+    printf(">> Recover from disable log: ENABLE LOG and FORMAT LOG ALL...\n");
+    packet_send('PMTK182,10');
+    packet_wait('PMTK001,182,16,3', 20);
     packet_send('PMTK182,6,1');
     packet_wait('PMTK001,182,6,3', 20);
 }
@@ -699,10 +740,11 @@ sub parse_log_data {
     my $log_format;
     my $checksum;
 
-    my $expected_records_sector = 0;
-    my $record_count_sector     = 0;
-    my $record_count_total      = 0;
-    my $gpx_in_trk              = 0;
+    my $expected_records_sector  = 0;
+    my $record_count_sector      = 0;
+    my $record_count_total       = 0;
+    my $gpx_in_trk               = 0;
+    my $next_data_force_waypoint = 0;
 
     my $gpx_trk_fname     = "${opt_f}_trk.gpx";
     my $gpx_wpt_fname     = "${opt_f}_wpt.gpx";
@@ -761,11 +803,13 @@ sub parse_log_data {
             } 
         }
 
-        #--------------------------------------------------------
+        #------------------------------------------------------------------
         # Check for:
-        # - record separator:  AAAAAAAAAAAAAAXXYYYYYYYYBBBBBBBB
-        # - non written space: FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        #--------------------------------------------------------
+        # - record separator:        AAAAAAAAAAAAAAXXYYYYYYYYBBBBBBBB
+        # - non written space:       FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	# - Holux M-241 separators : HOLUXGR241LOGGER
+	#                            HOLUXGR241WAYPNT
+        #------------------------------------------------------------------
         if (($log_len - tell($fp)) >= $SIZEOF_SEPARATOR) {
 
             $buffer = my_read($fp, $SIZEOF_SEPARATOR);
@@ -787,6 +831,25 @@ sub parse_log_data {
                     printf("New log bitmask: %s (0x%08X = %s)\n", $separator_arg, $log_format, describe_log_format($log_format)) if ($debug >= $LOG_INFO);
                 }
                 next; # Search for the next record or record separator.
+
+            } elsif ($buffer eq 'HOLUXGR241LOGGER') {
+	        #----------------------------------------------------------
+		# Found Holux M-241 separator
+	        #----------------------------------------------------------
+		printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
+                $model_id = '0021';
+                set_data_types($model_id);
+		next;
+
+	    } elsif ($buffer eq 'HOLUXGR241WAYPNT') {
+	        #----------------------------------------------------------
+		# Found Holux M-241 separator for waypoint.
+	        #----------------------------------------------------------
+		printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
+                $model_id = '0021';
+                set_data_types($model_id);
+		$next_data_force_waypoint = 1;
+		next;
 
             } elsif ($buffer eq (chr(0xff) x $SIZEOF_SEPARATOR)) {
                 #----------------------------------------------------------
@@ -851,7 +914,7 @@ sub parse_log_data {
         if ($log_format & $LOG_FORMAT_LATITUDE) {
             $buffer = my_read($fp, $SIZEOF_LOG_LATITUDE);
             $checksum ^= packet_checksum($buffer);
-            $record_latitude = mtk2double($buffer);
+            $record_latitude = mtk2number($buffer, $SIZEOF_LOG_LATITUDE);
             printf("Record LATITUDE: %s (%.9f)\n", uc(unpack('H*', $buffer)), $record_latitude) if ($debug >= $LOG_DEBUG);
         }
 
@@ -859,7 +922,7 @@ sub parse_log_data {
         if ($log_format & $LOG_FORMAT_LONGITUDE) {
             $buffer = my_read($fp, $SIZEOF_LOG_LONGITUDE);
             $checksum ^= packet_checksum($buffer);
-            $record_longitude = mtk2double($buffer);
+            $record_longitude = mtk2number($buffer, $SIZEOF_LOG_LONGITUDE);
             printf("Record LONGITUDE: %s (%.9f)\n", uc(unpack('H*', $buffer)), $record_longitude) if ($debug >= $LOG_DEBUG);
         }
 
@@ -867,7 +930,7 @@ sub parse_log_data {
         if ($log_format & $LOG_FORMAT_HEIGHT) {
             $buffer = my_read($fp, $SIZEOF_LOG_HEIGHT);
             $checksum ^= packet_checksum($buffer);
-            $record_height = mtk2float($buffer);
+            $record_height = mtk2number($buffer, $SIZEOF_LOG_HEIGHT);
             printf("Record HEIGHT: %s (%.6f)\n", uc(unpack('H*', $buffer)), $record_height) if ($debug >= $LOG_DEBUG);
         }
 
@@ -875,7 +938,7 @@ sub parse_log_data {
         if ($log_format & $LOG_FORMAT_SPEED) {
             $buffer = my_read($fp, $SIZEOF_LOG_SPEED);
             $checksum ^= packet_checksum($buffer);
-            $record_speed = mtk2float($buffer);
+            $record_speed = mtk2number($buffer, $SIZEOF_LOG_SPEED);
             printf("Record SPEED: %s (%.6f)\n", uc(unpack('H*', $buffer)), $record_speed) if ($debug >= $LOG_DEBUG);
         }
 
@@ -883,7 +946,7 @@ sub parse_log_data {
         if ($log_format & $LOG_FORMAT_HEADING) {
             $buffer = my_read($fp, $SIZEOF_LOG_HEADING);
             $checksum ^= packet_checksum($buffer);
-            $record_heading = mtk2float($buffer);
+            $record_heading = mtk2number($buffer, $SIZEOF_LOG_HEADING);
             printf("Record HEADING: %s (%.6f)\n", uc(unpack('H*', $buffer)), $record_heading) if ($debug >= $LOG_DEBUG);
         }
 
@@ -1017,16 +1080,19 @@ sub parse_log_data {
         if ($log_format & $LOG_FORMAT_DISTANCE) {
             $buffer = my_read($fp, $SIZEOF_LOG_DISTANCE);
             $checksum ^= packet_checksum($buffer);
-            $record_distance = mtk2double($buffer);
+            $record_distance = mtk2number($buffer, $SIZEOF_LOG_DISTANCE);
             printf("Record DISTANCE: %s (%.9f)\n", uc(unpack('H*', $buffer)), $record_distance) if ($debug >= $LOG_DEBUG);
         }
 
+        if ($LOG_HAS_CHECKSUM_SEPARATOR) {
+            # Read separator between data and checksum.
+            $buffer = my_read($fp, $SIZEOF_BYTE);
+            if ($buffer ne '*') {
+                printf("ERROR: Checksum separator error: expected char 0x%02X, found 0x%02X\n", ord('*'), ord($buffer));
+                last;
+            }
+	}
         # Read and verify checksum.
-        $buffer = my_read($fp, $SIZEOF_BYTE);
-        if ($buffer ne '*') {
-            printf("ERROR: Checksum separator error: expected char 0x%02X, found 0x%02X\n", ord('*'), ord($buffer));
-            last;
-        }
         $buffer = my_read($fp, $SIZEOF_BYTE);
         if ($checksum != ord($buffer)) {
             printf("ERROR: Record checksum error: expected 0x%02X, computed 0x%02X\n", ord($buffer), $checksum);
@@ -1040,18 +1106,24 @@ sub parse_log_data {
         }
 
         if (defined($record_latitude) and defined($record_longitude)) {
-            # Write <trkpt> data in GPX file.
-            if (($record_valid != $VALID_NOFIX) and !($record_rcr & $RCR_BUTTON)) {
-                if (! $gpx_in_trk) {
-                    gpx_print_trk_begin($fp_gpx_trk) if ($opt_t);
-                    $gpx_in_trk = 1;
+	    if ($next_data_force_waypoint) {
+	        # Write <wpt> data in GPX file.
+	        gpx_print_wpt($fp_gpx_wpt) if ($opt_w);
+	        $next_data_force_waypoint = 0;
+	    } else {
+                # Write <trkpt> data in GPX file.
+                if (($record_valid != $VALID_NOFIX) and !($record_rcr & $RCR_BUTTON)) {
+                    if (! $gpx_in_trk) {
+                        gpx_print_trk_begin($fp_gpx_trk) if ($opt_t);
+                        $gpx_in_trk = 1;
+                    }
+                    gpx_print_trkpt($fp_gpx_trk) if ($opt_t);
                 }
-                gpx_print_trkpt($fp_gpx_trk) if ($opt_t);
-            }
-            # Write <wpt> data in GPX file.
-            if (($record_rcr & $RCR_BUTTON) and ($record_valid != $VALID_NOFIX)) {
-                gpx_print_wpt($fp_gpx_wpt) if ($opt_w);
-            }
+                # Write <wpt> data in GPX file.
+                if (($record_rcr & $RCR_BUTTON) and ($record_valid != $VALID_NOFIX)) {
+                    gpx_print_wpt($fp_gpx_wpt) if ($opt_w);
+                }
+	    }
         }
 
     }
@@ -1392,17 +1464,14 @@ sub mtk2long {
 }
 
 #-------------------------------------------------------------------------
-# Convert a 32 bit binary data into a float number.
+# Convert 24, 32 or 64 bit binary data into a number.
 #-------------------------------------------------------------------------
-sub mtk2float {
-    unpack('f', shift);
-}
-
-#-------------------------------------------------------------------------
-# Convert a 64 bit binary data into a double precision number.
-#-------------------------------------------------------------------------
-sub mtk2double {
-    unpack('d', shift);
+sub mtk2number {
+    my $buffer = shift;
+    my $size = shift;
+    if    ($size == $SIZEOF_FLOAT3) { return unpack('f', chr(0) . $buffer); }
+    elsif ($size == $SIZEOF_FLOAT)  { return unpack('f', $buffer); }
+    elsif ($size == $SIZEOF_DOUBLE) { return unpack('d', $buffer); }
 }
 
 #-------------------------------------------------------------------------
@@ -1572,14 +1641,15 @@ sub flash_memory_size {
 # Open the serial port.
 sub serial_port_open {
     my $port = shift;
+    my $baudrate = shift;
     die("Cannot open $port. Did you turn on the GPS device?\n") if (! -c $port);
     $device = Device::SerialPort->new($port);
-    $device->baudrate(115200)   || die "fail setting parity";
-    $device->parity('none')     || die "fail setting parity";
-    $device->databits(8)        || die "fail setting databits";
-    $device->stopbits(1)        || die "fail setting stopbits";
-    $device->handshake('none')  || die "fail setting handshake";
-    $device->write_settings     || die "no settings";
+    $device->baudrate($baudrate) || die "fail setting baud rate";
+    $device->parity('none')      || die "fail setting parity";
+    $device->databits(8)         || die "fail setting databits";
+    $device->stopbits(1)         || die "fail setting stopbits";
+    $device->handshake('none')   || die "fail setting handshake";
+    $device->write_settings      || die "no settings";
 }
 
 # Close the port.
@@ -1602,4 +1672,23 @@ sub serial_port_set_read_timeout {
 # Return the number of characters read (1 if success) and the character itself.
 sub serial_port_getch {
     return($device->read(1));
+}
+
+#-------------------------------------------------------------------------
+# Set data type according to GPS model ID.
+#-------------------------------------------------------------------------
+sub set_data_types {
+
+    my $model_id = shift;
+
+    if ($model_id eq '0005' or
+        $model_id eq '0021' or
+        $model_id eq '0023')
+    {
+        printf("Setting log format and data types for Holum M-241, model ID %s\n", $model_id) if ($debug >= $LOG_INFO);
+	$LOG_HAS_CHECKSUM_SEPARATOR = 0;
+        $SIZEOF_LOG_LATITUDE  = $SIZEOF_FLOAT;
+	$SIZEOF_LOG_LONGITUDE = $SIZEOF_FLOAT;
+        $SIZEOF_LOG_HEIGHT    = $SIZEOF_FLOAT3;
+    }
 }

@@ -1,12 +1,13 @@
-.TH MTKBABEL 1 "January 27, 2008"
+.TH MTKBABEL 1 "June 12, 2008"
 .SH NAME
-mtkbabel \- Tool for managing i-Blue 747 and compatible GPS data loggers
+mtkbabel \- Tool for managing GPS data loggers based on the MTK chip
 .SH SYNOPSIS
-.B mtkbabel \fR[\fB\-abdEfhlmoprtvw\fR]
+.B mtkbabel \fR[\fB\-abdEfhlmopRrstvw\fR]
 .SH DESCRIPTION
 .B mtkbabel
-is a command line program to operate the i-Blue 747 GPS data logger.
-It should work also with other GPS devices based on the MediaTek MTK chipset.
+is a command line program to operate GPS data loggers based on the MediaTek MTK chip.
+It was tested on the i-Blue 747 and on the Holux M-241, it should work also with other
+GPS devices based on the same chip.
 .sp
 The main features are:
  - Command line interface
@@ -50,8 +51,14 @@ permissions of /dev/ttyUSB0 according to your requirements.
 4. You can now run mtkbabel. For example, if you want to download the
 track log and the list of waypoints you captured on the device, run:
 .sp
-.B "   $ mtkbabel -l off -f foo -w -t"
+.B "   $ mtkbabel -s 115200 -l off -f foo -w -t"
 .sp
+The default speed of
+.B 115200
+baud should work in most cases and you can omit it, for the Holux M-241 you
+must use
+.B 38400
+instead.
 This will turn off the autolog function, which is always turned on when you
 switch on the device. The track log will be in the file
 .BR foo_trk.gpx ,
@@ -64,42 +71,11 @@ can take several minutes, depending on how much data has to be transferred.
 .sp
 In order to delete all data from the GPS device, run:
 .sp
-.B "   $ mtkbabel -E"
+.B "   $ mtkbabel -s 115200 -E"
 .SH OPTIONS
-.TP
-.BR "\-p" " port"
-Communication port, default:
-.BR /dev/ttyUSB0 "."
-.TP
-.B "\-f"
-Base name for saved files (.bin and .gpx).
-.TP
-.B "\-w"
-Create a gpx file with waypoints.
-.TP
-.B "\-t"
-Create a gpx file with tracks.
 .TP
 .B "\-a"
 Read all the log memory (overlapped data).
-.TP
-.B "\-E"
-Erase data log memory.
-.TP
-.BR "\-l" " {on|off}"
-Turn loggin ON/OFF.
-.TP
-.BR "\-m" " {stop|overlap}"
-Set STOP/OVERLAP recording method on memory full.
-.TP
-.BR "\-r" " time:distance:speed"
-Set logging criteria (zero to disable): every 1-999 seconds, every 10-9999
-meters, over 10-999 km/h.
-.TP
-.BR "\-o" " log_format"
-Enable or disable log fields (FIELD1,\-FIELD2,...), available fields:
-UTC, VALID, LATITUDE, LONGITUDE, HEIGHT, SPEED, HEADING, DSTA, DAGE, PDOP,
-HDOP, VDOP, NSAT, SID, ELEVATION, AZIMUTH, SNR, RCR, MILLISECOND, DISTANCE.
 .TP
 .BR "\-b" " filename.bin"
 Do not read device, read a previously saved .bin file.
@@ -107,11 +83,49 @@ Do not read device, read a previously saved .bin file.
 .BR "\-d" " debug_level"
 Debug level: 0..7.
 .TP
+.B "\-E"
+Erase data log memory.
+.TP
+.B "\-f"
+Base name for saved files (.bin and .gpx).
+.TP
 .B "\-h"
 Show a help text and exit.
 .TP
+.BR "\-l" " {on|off}"
+Turn loggin ON/OFF.
+.TP
+.BR "\-m" " {stop|overlap}"
+Set STOP/OVERLAP recording method on memory full.
+.TP
+.BR "\-o" " log_format"
+Enable or disable log fields (FIELD1,\-FIELD2,...), available fields:
+UTC, VALID, LATITUDE, LONGITUDE, HEIGHT, SPEED, HEADING, DSTA, DAGE, PDOP,
+HDOP, VDOP, NSAT, SID, ELEVATION, AZIMUTH, SNR, RCR, MILLISECOND, DISTANCE.
+.TP
+.BR "\-p" " port"
+Communication port, default:
+.BR /dev/ttyUSB0 "."
+.TP
+.B "\-R"
+Recover from disabled log: erase data and reset recording criteria.
+.TP
+.BR "\-r" " time:distance:speed"
+Set logging criteria (zero to disable): every 1-999 seconds, every 10-9999
+meters, over 10-999 km/h.
+.TP
+.BR "\-s" " speed"
+Serial port speed, default
+.BR 115200 " baud."
+.TP
+.B "\-t"
+Create a gpx file with tracks.
+.TP
 .B "\-v"
 Show version information and exit.
+.TP
+.B "\-w"
+Create a gpx file with waypoints.
 .SH BUGS
 Please report any bugs to
 Niccolo Rigacci <niccolo@rigacci.org>.
