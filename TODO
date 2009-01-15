@@ -1,0 +1,17 @@
+Gestire il caso in cui non arriva mai il preambolo del pacchetto
+(carattere "$" mi pare), ad esempio se si sbaglia velocita' della
+seriale.
+
+Gestire il caso in cui il device e' spento.
+
+Gestire casi del genere (risposta non in sequenza, pacchetto di
+test non risposto):
+
+19:28:52 TX packet => PMTK000*32
+19:28:52 RX packet <= PMTK001,182,6,3*21
+19:28:58 ERROR: packet_wait() failed for packet PMTK001,0,
+MTK Test OK
+19:28:58 TX packet => PMTK604*30
+19:28:58 RX packet <= PMTK001,0,3*30
+19:28:59 RX packet <= PMTK001,604,1*30
+19:28:59 TX packet => PMTK605*31
