@@ -287,7 +287,8 @@ undef($fp_log);
 
 # Send test packet (PMTK_TEST).
 packet_send('PMTK000');
-packet_wait('PMTK001,0,');
+$ret = packet_wait('PMTK001,0,');
+die("MTK Test command FAILED\n") if (!($ret =~ m/PMTK001,0,/));
 print "MTK Test OK\n";
 
 # Query firmware version (PMTK_Q_VERSION).
@@ -323,7 +324,7 @@ set_data_types($model_id);
 if ($opt_E) {
     printf(">> Erasing log memory...\n");
     packet_send('PMTK182,6,1');
-    packet_wait('PMTK001,182,6,3', 20);
+    packet_wait('PMTK001,182,6,3', 120);
 }
 
 #-------------------------------------------------------------------------
@@ -333,9 +334,9 @@ if ($opt_E) {
 if ($opt_R) {
     printf(">> Recover from disable log: ENABLE LOG and FORMAT LOG ALL...\n");
     packet_send('PMTK182,10');
-    packet_wait('PMTK001,182,16,3', 20);
+    packet_wait('PMTK001,182,16,3', 120);
     packet_send('PMTK182,6,1');
-    packet_wait('PMTK001,182,6,3', 20);
+    packet_wait('PMTK001,182,6,3', 120);
 }
 
 #-------------------------------------------------------------------------
