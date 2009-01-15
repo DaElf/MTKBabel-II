@@ -1,0 +1,125 @@
+.TH MTKBABEL 1 "January 27, 2008"
+.SH NAME
+mtkbabel \- Tool for managing i-Blue 747 and compatible GPS data loggers
+.SH SYNOPSIS
+.B mtkbabel \fR[\fB\-abdEfhlmoprtvw\fR]
+.SH DESCRIPTION
+.B mtkbabel
+is a command line program to operate the i-Blue 747 GPS data logger.
+It should work also with other GPS devices based on the MediaTek MTK chipset.
+.sp
+The main features are:
+ - Command line interface
+ - Save data log in GPX and raw binary format
+ - If required retrieve all the data, also the old one being overlapped
+ - Change logging criteria: time, distance, speed
+ - Change log format
+ - START/STOP logging
+ - Set OVERLAP or STOP method on memory full
+ - Erase the internal memory
+.SH USAGE
+In order to use mtkbabel, please follow these instructions:
+.sp
+1. Attach the GPS data logger device to your computer
+.BR "via USB" .
+.sp
+2. Now you have to switch the GPS device (at least the i-Blue 747) into
+.BR "LOG or NAV mode" ,
+otherwise the device will not be powered on, and no connection will
+be possible. Beware that in NAV mode the device goes into sleep mode if
+not connected to any Bluetooth device.
+.sp
+3. In order to use mtkbabel you have to either be root (not recommended)
+and/or you must have read/write permissions for the USB device file, usually
+.BR /dev/ttyUSB0 .
+This device usually has permissions
+.BR "'crw-rw---- 1 root dialout'" ,
+so you can either add your user to the
+.B dialout
+group (in this example) by doing
+.sp
+.B "   $ adduser USERNAME dialout"
+.sp
+or (not recommended) make the device world-readable/-writable by doing:
+.sp
+.B "   $ chmod 666 /dev/ttyUSB0"
+.sp
+Another option is to write a udev rules file to change the owner and
+permissions of /dev/ttyUSB0 according to your requirements.
+.sp
+4. You can now run mtkbabel. For example, if you want to download the
+track log and the list of waypoints you captured on the device, run:
+.sp
+.B "   $ mtkbabel -l off -f foo -w -t"
+.sp
+This will turn off the autolog function, which is always turned on when you
+switch on the device. The track log will be in the file
+.BR foo_trk.gpx ,
+the waypoints in the file
+.B foo_wpt.gpx
+(both in GPX format). The file
+.B foo.bin
+will contain the binary log file. Downloading the data from the GPS device
+can take several minutes, depending on how much data has to be transferred.
+.sp
+In order to delete all data from the GPS device, run:
+.sp
+.B "   $ mtkbabel -E"
+.SH OPTIONS
+.TP
+.BR "\-p" " port"
+Communication port, default:
+.BR /dev/ttyUSB0 "."
+.TP
+.B "\-f"
+Base name for saved files (.bin and .gpx).
+.TP
+.B "\-w"
+Create a gpx file with waypoints.
+.TP
+.B "\-t"
+Create a gpx file with tracks.
+.TP
+.B "\-a"
+Read all the log memory (overlapped data).
+.TP
+.B "\-E"
+Erase data log memory.
+.TP
+.BR "\-l" " {on|off}"
+Turn loggin ON/OFF.
+.TP
+.BR "\-m" " {stop|overlap}"
+Set STOP/OVERLAP recording method on memory full.
+.TP
+.BR "\-r" " time:distance:speed"
+Set logging criteria (zero to disable): every 1-999 seconds, every 10-9999
+meters, over 10-999 km/h.
+.TP
+.BR "\-o" " log_format"
+Enable or disable log fields (FIELD1,\-FIELD2,...), available fields:
+UTC, VALID, LATITUDE, LONGITUDE, HEIGHT, SPEED, HEADING, DSTA, DAGE, PDOP,
+HDOP, VDOP, NSAT, SID, ELEVATION, AZIMUTH, SNR, RCR, MILLISECOND, DISTANCE.
+.TP
+.BR "\-b" " filename.bin"
+Do not read device, read a previously saved .bin file.
+.TP
+.BR "\-d" " debug_level"
+Debug level: 0..7.
+.TP
+.B "\-h"
+Show a help text and exit.
+.TP
+.B "\-v"
+Show version information and exit.
+.SH BUGS
+Please report any bugs to
+Niccolo Rigacci <niccolo@rigacci.org>.
+.SH LICENCE
+.B mtkbabel
+is covered by the GNU General Public License (GPL), version 2 or later.
+.SH AUTHORS
+Niccolo Rigacci <niccolo@rigacci.org>
+.PP
+This manual page was written by Uwe Hermann <uwe@hermann-uwe.de>.
+It is licensed under the terms of the GNU GPL (version 2 or later).

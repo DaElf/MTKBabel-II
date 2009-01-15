@@ -1,0 +1,53 @@
+---------------------------------------------------------------------------
+README file for the MTKBabel program
+---------------------------------------------------------------------------
+Copyright 2007 Niccolo Rigacci <niccolo@rigacci.org>
+Get latest version and other info at:
+http://www.rigacci.org/wiki/doku.php/doc/appunti/hardware/gps_logger_i_blue_747
+
+MTKBabel is a Perl program to operate the i-Blue 747 GPS data logger.
+It should work also with other GPS devices based on the MediaTek MTK
+chipset. It is free software released under the GPL license.
+
+The main capabilities are:
+
+  * Command line interface
+  * Save data log in GPX and raw binary format
+  * If required retrieve all the data, also the old one being overlapped
+  * Change logging criteria: time, distance, speed
+  * Change log format
+  * START/STOP logging
+  * Set OVERLAP or STOP method on memory full
+  * Erase the internal memory
+
+The progam is written in Perl, and it was tested on Linux via USB
+connection. One goal is easy portability to C and small RAM footprint.
+
+Run mtkbabel -h for a brief help screen.
+
+In order to run the mtkbabel program you should have installed a
+standard Perl distribution, plus the following libraries:
+
+  * Device::SerialPort
+  * Date::Format
+
+Check if your operating system provides a package for them, or refer
+to the cpan(1) manual page.
+
+
+---------------------------------------------------------------------------
+KNOWN BUGS
+---------------------------------------------------------------------------
+
+* Floating point numbers and non-i386 architectures
+
+Convesion of floating point numbers (64 bit doubles and 32 bit
+floats) from MTK binary format to GPX text is done with the Perl
+unpack() function.
+
+This seems to work properly on the GNU/Linux i386 architecture,
+(I think both uses IEEE 754 encoding). It fails - at least - on my
+Arm box, with an XScale processor.
+
+The functions mtk2double() mtk2float() should be rewritten using
+some math library or in pure Perl.

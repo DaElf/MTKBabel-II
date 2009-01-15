@@ -1,0 +1,55 @@
+mtkbabel (0.6)
+
+  * Added a man page, thanks to Uwe Hermann.
+  * Some cosmetic changes.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Thu, 07 Feb 2008 22:22:20 +0100
+
+mtkbabel (0.5)
+
+  * Read all the contents of the flash memory when in OVERLAP mode or
+    when forced with the -a option.
+  * Added flash_memory_size($model_id) function.
+  * Fixed memory used computation.
+  * Improved error handling in log file parsing.
+  * Description of record type (time, distance, speed, button) can now 
+    accomodate multiple criteria.
+  * Clean-up of the code.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Mon, 10 Dec 2007 16:39:55 +0100
+
+mtkbabel (0.4)
+
+  * Used the File::Basename library instead of basename(1) Unix command.
+  * Added display of failed sectors, need format and disable status.
+  * Chaged wording: use sector instead of block, to conform with Mediatek
+    documentation.
+  * Fixed a bug occurring when SID is logged, but NSAT is not.
+  * Better output of waypoints, now conform with GPX schema.
+  * Grouped all the serial port related functions, to ease porting.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Wed, 28 Nov 2007 22:38:07 +0100
+
+mtkbabel (0.3)
+
+  * Fixed a bug in encode_log_format() function: disabling a log field
+    now works as expected.
+  * Changed type of $satdata_elevation from unsigned to signed.
+  * Now produces GPX 1.1 files with mtk extensions, as defined in the
+    proposed MtkExtensionsv1.xsd schema.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Sun, 25 Nov 2007 21:31:21 +0100
+
+mtkbabel (0.2)
+
+  * Fixed an error in utm_time() function.
+  * Improved timeout handling in packet_wait().
+  * Correction in changelog (!).
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Tue, 20 Nov 2007 14:06:53 +0100
+
+mtkbabel (0.1)
+
+  * First public release.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Wed, 17 Oct 2007 12:37:37 +0200

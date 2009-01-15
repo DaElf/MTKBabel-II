@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:mtk="http://www.rigacci.org/gpx/MtkExtensions/v1"
+        targetNamespace="http://www.rigacci.org/gpx/MtkExtensions/v1"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+  <annotation><documentation>
+  This schema defines an extension to be used with the GPX 1.1 schema; it
+  accomodates extra fields logged by GPS devices based un the MediaTek (MTK)
+  chip. The root elements defined by this schema are intended to be used as
+  child elements of the "extensions" elements in the GPX 1.1 schema. The GPX
+  1.1 schema is available at http://www.topografix.com/GPX/1/1/gpx.xsd.
+  </documentation></annotation>
+
+  <element name="wptExtension" type="mtk:wptExtensionType" />
+
+  <complexType name="wptExtensionType">
+    <annotation><documentation>
+    This type contains data fields available in MTK waypoints that cannot
+    be represented in waypoints instances of GPX 1.1 schema.
+    </documentation></annotation>
+    <sequence>
+      <element name="valid"      type="mtk:validFixType"   minOccurs="0" />
+      <element name="speed"      type="float"              minOccurs="0" />
+      <element name="heading"    type="float"              minOccurs="0" />
+      <element name="satinview"  type="nonNegativeInteger" minOccurs="0" />
+      <element name="satdata"    type="mtk:satdataType"    minOccurs="0" maxOccurs="unbounded"/>
+      <element name="msec"       type="mtk:msecType"       minOccurs="0" />
+      <element name="distance"   type="double"             minOccurs="0" />
+      <element name="extensions" type="mtk:extensionsType" minOccurs="0" />
+    </sequence>
+  </complexType>
+
+  <simpleType name="validFixType">
+    <annotation><documentation>
+    Type of GPS fix. nofix = the GPS device had no fix. sps = Standard
+    Positioning Service; before May 2000 it was affected by Selective
+    Availability degradation. dgps = Differential GPS; fix aided by
+    ground-based station corrections. pps = Precise Positioning Service;
+    accuracy not affected by Selective Availability, provided encrypted.
+    rtk = Real Time Kinematic with fixed integers. frtk = Real Time
+    Kinematic with floating integers. estimated = Estimated mode (dead
+    reckoning). manual = fix was entered manually. simulator = the GPS
+    device is operating in simulation mode, it had no real GPS fix.
+    </documentation></annotation>
+    <restriction base="string">
+      <enumeration value="nofix" />
+      <enumeration value="sps" />
+      <enumeration value="dgps" />
+      <enumeration value="pps" />
+      <enumeration value="rtk" />
+      <enumeration value="frtk" />
+      <enumeration value="estimated" />
+      <enumeration value="manual" />
+      <enumeration value="simulator" />
+    </restriction>
+  </simpleType>
+
+  <complexType name="satdataType">
+    <annotation><documentation>
+    Satellite information. If satellite information is logged, "sid"
+    (Station ID) and "inuse" (if the station was used to compute the fix)
+    are always logged. elevation = elevation above the horizon of the
+    satellite, in degrees. azimuth = the angle between true north and the
+    satellite, in degrees. snr = signal to noise ratio.
+    </documentation></annotation>
+    <sequence>
+      <element name="elevation" type="mtk:elevationType" minOccurs="0" />
+      <element name="azimuth"   type="mtk:azimuthType"   minOccurs="0" />
+      <element name="snr"       type="integer"           minOccurs="0" />
+    </sequence>
+    <attribute name="sid"       type="unsignedByte"      use="required" />
+    <attribute name="inuse"     type="boolean"           use="required" />
+  </complexType>
+
+  <simpleType name="elevationType">
+    <restriction base="decimal">
+      <minInclusive value="-90.0"/>
+      <maxInclusive value="90.0"/>
+    </restriction>
+  </simpleType>
+
+  <simpleType name="azimuthType">
+    <restriction base="decimal">
+      <minInclusive value="0.0"/>
+      <maxExclusive value="360.0"/>
+    </restriction>
+  </simpleType>
+
+  <simpleType name="msecType">
+    <restriction base="nonNegativeInteger">
+      <maxInclusive value="999" />
+    </restriction>
+  </simpleType>
+
+  <complexType name="extensionsType">
+    <sequence>
+      <any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded">
+      </any>
+    </sequence>
+  </complexType>
+
+</schema>
