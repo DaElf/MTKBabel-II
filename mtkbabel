@@ -1633,6 +1633,7 @@ sub flash_memory_size {
     return( 8 * 1024 * 1024 / 8) if ($model == 0x1388); # 757/ZI v1        8 Mbit = 1 Mb
     return( 8 * 1024 * 1024 / 8) if ($model == 0x5202); # 757/ZI v2        8 Mbit = 1 Mb
     return(32 * 1024 * 1024 / 8) if ($model == 0x8300); # Qstartz BT-1200 32 Mbit = 4 Mb
+    return(32 * 1024 * 1024 / 8) if ($model == 0x0008); # Pentagram PathFinder P 3106
     # 0x0051    i-Blue 737, Qstartz 810, Polaris iBT-GPS, Holux M1000
     # 0x0002    Qstartz 815
     # 0x001b    i-Blue 747
