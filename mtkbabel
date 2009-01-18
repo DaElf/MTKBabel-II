@@ -149,6 +149,8 @@ my $GPX_EOL = "\n";
 
 # Default timeout for packet wait (sec).
 my $TIMEOUT = 5;
+# Timeout waiting for char "$" which is MTK packet start (sec).
+my $TIMEOUT_PKT_PREAMBLE = 20;
 # Timeout for activity on device port (msec).
 my $TIMEOUT_IDLE_PORT = 5000;
 
@@ -595,6 +597,7 @@ sub packet_read {
     my $timeout = shift;
     my $c;
     my $n;
+    my $t;
     my $pkt;
     my $previous_c;
     my $payload;
@@ -606,10 +609,12 @@ sub packet_read {
 
     # Wait packet preamble.
     $c = '';
-    while ($c ne '$') {
+    $t = time();
+    while ($c ne '$' and (time() - $t) < $TIMEOUT_PKT_PREAMBLE) {
         ($n, $c) = serial_port_getch();
         die("ERROR: Reading from device (may be switched OFF): $!") if ($n != 1);
     }
+    die("ERROR: Packet preamble not found (wrong serial speed or output from device not flushed)\n") if ($c ne '$');
 
     # Read until End Of Packet.
     $pkt = '';

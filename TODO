@@ -1,9 +1,3 @@
-Gestire il caso in cui non arriva mai il preambolo del pacchetto
-(carattere "$" mi pare), ad esempio se si sbaglia velocita' della
-seriale.
-
-Gestire il caso in cui il device e' spento.
-
 Gestire casi del genere (risposta non in sequenza, pacchetto di
 test non risposto):
 
