@@ -78,10 +78,11 @@ In order to delete all data from the GPS device, run:
 Read all the log memory (overlapped data).
 .TP
 .BR "\-b" " filename.bin"
-Do not read device, read a previously saved .bin file.
+Do not read data from a GPS device, but rather read a previously
+saved .bin file.
 .TP
 .B "\-c"
-Create a gpx file with both tracks and waypoints.
+Create a GPX file with both tracks and waypoints.
 .TP
 .BR "\-d" " debug_level"
 Debug level: 0..7.
@@ -90,13 +91,19 @@ Debug level: 0..7.
 Erase data log memory.
 .TP
 .B "\-f"
-Base name for saved files (.bin and .gpx).
+Base name for saved files (.bin and .gpx). If you, for example, use
+.BR "-f gpslog" ,
+mtkbabel will create files which are called 
+.BR gpslog.gpx ,
+.BR gpslog_trk.gpx ,
+.BR gpslog_wpt.gpx " and"
+.BR gpslog.bin .
 .TP
 .B "\-h"
 Show a help text and exit.
 .TP
 .BR "\-l" " {on|off}"
-Turn loggin ON/OFF.
+Turn logging ON/OFF.
 .TP
 .BR "\-m" " {stop|overlap}"
 Set STOP/OVERLAP recording method on memory full.
@@ -122,13 +129,13 @@ Serial port speed, default
 .BR 115200 " baud."
 .TP
 .B "\-t"
-Create a gpx file with tracks.
+Create a GPX file with tracks.
 .TP
 .B "\-v"
 Show version information and exit.
 .TP
 .B "\-w"
-Create a gpx file with waypoints.
+Create a GPX file with waypoints.
 .SH BUGS
 Please report any bugs to
 Niccolo Rigacci <niccolo@rigacci.org>.
