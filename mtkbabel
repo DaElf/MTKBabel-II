@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2007, 2008 Niccolo Rigacci
+# Copyright (C) 2007 - 2009 Niccolo Rigacci
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.7	2008-06-17
+# Version:      svn	2009-01-18
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -608,7 +608,7 @@ sub packet_read {
     $c = '';
     while ($c ne '$') {
         ($n, $c) = serial_port_getch();
-        die("ERROR: Reading from device: $!") if ($n != 1);
+        die("ERROR: Reading from device (may be switched OFF): $!") if ($n != 1);
     }
 
     # Read until End Of Packet.
@@ -616,7 +616,7 @@ sub packet_read {
     $previous_c = '';
     while (1) {
         ($n, $c) = serial_port_getch();
-        die("ERROR: Reading from device: $!") if ($n != 1);
+        die("ERROR: Reading from device (may be switched OFF): $!") if ($n != 1);
         if ($c eq '$') {
             $pkt = '';
         } else {
@@ -1643,7 +1643,7 @@ sub flash_memory_size {
 sub serial_port_open {
     my $port = shift;
     my $baudrate = shift;
-    die("Cannot open $port. Did you turn on the GPS device?\n") if (! -c $port);
+    die("Cannot open $port. Did you switch ON the GPS device?\n") if (! -c $port);
     $device = Device::SerialPort->new($port);
     $device->baudrate($baudrate) || die "fail setting baud rate";
     $device->parity('none')      || die "fail setting parity";
