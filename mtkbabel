@@ -29,7 +29,7 @@ use strict;
 use File::Basename;
 # Use the getopts() function.
 use Getopt::Std;
-use vars qw($opt_a $opt_b $opt_d $opt_E $opt_f $opt_h $opt_l $opt_m $opt_o $opt_p $opt_R $opt_r $opt_s $opt_t $opt_v $opt_w);
+use vars qw($opt_a $opt_b $opt_c $opt_d $opt_E $opt_f $opt_h $opt_l $opt_m $opt_o $opt_p $opt_R $opt_r $opt_s $opt_t $opt_v $opt_w);
 # Install the libdevice-serialport-perl Debian package.
 use Device::SerialPort;
 # Install the libtimedate-perl Debian package.
@@ -218,7 +218,7 @@ my $record_distance;
 #-------------------------------------------------------------------------
 # Get options from command line.
 #-------------------------------------------------------------------------
-if (! getopts('ab:d:Ef:hl:m:o:p:Rr:s:tvw') or $opt_h) {
+if (! getopts('ab:cd:Ef:hl:m:o:p:Rr:s:tvw') or $opt_h) {
     my $str1 = describe_log_format(0x00fff);
     my $str2 = describe_log_format(0xff000);
     print <<HELP;
@@ -226,6 +226,7 @@ Usage: $NAME [options]
 Options:
     -a                       Read all the log memory (overlapped data)
     -b filename.bin          Do not read device, read a previously saved .bin file
+    -c                       Create a gpx file with tracks and waypoints
     -d debug_level           Debug level: 0..7
     -E                       Erase data log memory
     -f filename              Base name for saved files (.bin and .gpx)
@@ -752,6 +753,7 @@ sub parse_log_data {
     my $gpx_in_trk               = 0;
     my $next_data_force_waypoint = 0;
 
+    my $gpx_fname         = "${opt_f}.gpx";
     my $gpx_trk_fname     = "${opt_f}_trk.gpx";
     my $gpx_wpt_fname     = "${opt_f}_wpt.gpx";
     my $gpx_trk_tmp_fname = "${opt_f}_trk.gpx.$$.tmp";
@@ -764,8 +766,8 @@ sub parse_log_data {
     seek($fp, 0, 0) or die;
 
     # Open GPX temporary files for writing tracks and waypoints.
-    open($fp_gpx_trk, ">$gpx_trk_tmp_fname") or die("ERROR writing $gpx_trk_tmp_fname: $!") if ($opt_t);
-    open($fp_gpx_wpt, ">$gpx_wpt_tmp_fname") or die("ERROR writing $gpx_wpt_tmp_fname: $!") if ($opt_w);
+    open($fp_gpx_trk, ">$gpx_trk_tmp_fname") or die("ERROR writing $gpx_trk_tmp_fname: $!") if ($opt_t or $opt_c);
+    open($fp_gpx_wpt, ">$gpx_wpt_tmp_fname") or die("ERROR writing $gpx_wpt_tmp_fname: $!") if ($opt_w or $opt_c);
 
     while (1) {
 
@@ -1141,9 +1143,30 @@ sub parse_log_data {
         $gpx_in_trk = 0;
     }
 
+    # Close temporary files.
+    close($fp_gpx_trk) if ($opt_t or $opt_c);
+    close($fp_gpx_wpt) if ($opt_w or $opt_c);
+
+    # Write GPX combined tracks and waypoint file.
+    if ($opt_c) {
+        my $gpx_minlat = $gpx_trk_minlat < $gpx_wpt_minlat ? $gpx_trk_minlat : $gpx_wpt_minlat;
+        my $gpx_maxlat = $gpx_trk_maxlat > $gpx_wpt_maxlat ? $gpx_trk_maxlat : $gpx_wpt_maxlat;
+        my $gpx_minlon = $gpx_trk_minlon < $gpx_wpt_minlon ? $gpx_trk_minlon : $gpx_wpt_minlon;
+        my $gpx_maxlon = $gpx_trk_maxlon > $gpx_wpt_maxlon ? $gpx_trk_maxlon : $gpx_wpt_maxlon;
+        open($fp_gpx, ">$gpx_fname") or die("ERROR writing $gpx_fname: $!");
+        gpx_print_gpx_begin($fp_gpx, time(), $gpx_minlat, $gpx_minlon, $gpx_maxlat, $gpx_maxlon);
+        open($fp_gpx_trk, "$gpx_trk_tmp_fname") or die;
+        while (<$fp_gpx_trk>) { print $fp_gpx $_; }
+        close($fp_gpx_trk);
+        open($fp_gpx_wpt, "$gpx_wpt_tmp_fname") or die;
+        while (<$fp_gpx_wpt>) { print $fp_gpx $_; }
+        close($fp_gpx_wpt);
+        gpx_print_gpx_end($fp_gpx);
+        close($fp_gpx);
+    }
+
     # Write GPX tracks file.
     if ($opt_t) {
-        close($fp_gpx_trk);
         open($fp_gpx, ">$gpx_trk_fname") or die("ERROR writing $gpx_trk_fname: $!");
         gpx_print_gpx_begin($fp_gpx, time(), $gpx_trk_minlat, $gpx_trk_minlon, $gpx_trk_maxlat, $gpx_trk_maxlon);
         open($fp_gpx_trk, "$gpx_trk_tmp_fname") or die;
@@ -1151,12 +1174,10 @@ sub parse_log_data {
         close($fp_gpx_trk);
         gpx_print_gpx_end($fp_gpx);
         close($fp_gpx);
-        unlink($gpx_trk_tmp_fname);
     }
 
     # Write GPX waypoints file.
     if ($opt_w) {
-        close($fp_gpx_wpt);
         open($fp_gpx, ">$gpx_wpt_fname") or die("ERROR writing $gpx_wpt_fname: $!");
         gpx_print_gpx_begin($fp_gpx, time(), $gpx_wpt_minlat, $gpx_wpt_minlon, $gpx_wpt_maxlat, $gpx_wpt_maxlon);
         open($fp_gpx_wpt, "$gpx_wpt_tmp_fname") or die;
@@ -1164,8 +1185,12 @@ sub parse_log_data {
         close($fp_gpx_wpt);
         gpx_print_gpx_end($fp_gpx);
         close($fp_gpx);
-        unlink($gpx_wpt_tmp_fname);
     }
+
+    # Remove temporary files.
+    unlink($gpx_trk_tmp_fname) if ($opt_t or $opt_c);
+    unlink($gpx_wpt_tmp_fname) if ($opt_w or $opt_c);
+
 }
 
 #-------------------------------------------------------------------------

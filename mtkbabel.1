@@ -2,7 +2,7 @@
 .SH NAME
 mtkbabel \- Tool for managing GPS data loggers based on the MTK chip
 .SH SYNOPSIS
-.B mtkbabel \fR[\fB\-abdEfhlmopRrstvw\fR]
+.B mtkbabel \fR[\fB\-abcdEfhlmopRrstvw\fR]
 .SH DESCRIPTION
 .B mtkbabel
 is a command line program to operate GPS data loggers based on the MediaTek MTK chip.
@@ -79,6 +79,9 @@ Read all the log memory (overlapped data).
 .TP
 .BR "\-b" " filename.bin"
 Do not read device, read a previously saved .bin file.
+.TP
+.B "\-c"
+Create a gpx file with both tracks and waypoints.
 .TP
 .BR "\-d" " debug_level"
 Debug level: 0..7.
