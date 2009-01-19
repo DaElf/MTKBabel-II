@@ -4,7 +4,8 @@ mtkbabel (0.8)
   * Exit if MTK Test command fails.
   * Added hints in error messages for device turned OFF.
   * Added timeout and error message for wrong communication speed.
-  * Added -c option, to get a GPX file with both tracks and waypoints.
+  * Added -c option, to get a GPX file with both tracks and waypoints,
+    thanks to Filippo Giunchedi.
 
  -- Niccolo Rigacci <niccolo@rigacci.org>  Mon, 19 Jan 2009 01:19:21 +0100
 
