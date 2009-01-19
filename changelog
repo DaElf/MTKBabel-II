@@ -1,10 +1,12 @@
-mtkbabel (????????????????)
+mtkbabel (0.8)
 
-  * Allow more time for the -E and -R commands to execute. One user
-    reported at least 27 seconds required.
-  * Exit if MTK Text command fails.
+  * Allow more time for the -E and -R commands to execute.
+  * Exit if MTK Test command fails.
+  * Added hints in error messages for device turned OFF.
+  * Added timeout and error message for wrong communication speed.
+  * Added -c option, to get a GPX file with both tracks and waypoints.
 
- -- Niccolo Rigacci <niccolo@rigacci.org>  ???????????????????????????????????
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Mon, 19 Jan 2009 01:19:21 +0100
 
 mtkbabel (0.7)
 
