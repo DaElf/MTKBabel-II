@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      svn	2009-01-18
+# Version:      0.8	2009-01-18
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -270,7 +270,7 @@ $opt_b    = substr($opt_b, 0, -4) if (substr($opt_b, -4) eq '.bin');
 # Do not open the device, read instead an existing binary log file.
 #-------------------------------------------------------------------------
 if ($opt_b) {
-    if ($opt_t or $opt_w) {
+    if ($opt_t or $opt_w or $opt_c) {
         # Parse binary data and save GPX files.
         $opt_f = $opt_b;
         # Total number of records is unknown: we will exit on End Of File.
@@ -506,7 +506,7 @@ if ($ret =~ m/PMTK182,3,11,([0-9A-Za-z]+)\*/) {
 #-------------------------------------------------------------------------
 # Get binary data from the device and save to a file.
 #-------------------------------------------------------------------------
-if ($opt_f and ($opt_t or $opt_w)) {
+if ($opt_f and ($opt_t or $opt_w or $opt_c)) {
 
     # Compute the memory used by data log, round-up to the entire sector.
     if (($rec_method == $RCD_METHOD_OVP) or $opt_a) {
@@ -828,7 +828,7 @@ sub parse_log_data {
                 #----------------------------------------------------------
                 # Close the current <trk> in GPX.
                 if ($gpx_in_trk) {
-                    gpx_print_trk_end($fp_gpx_trk) if ($opt_t);
+                    gpx_print_trk_end($fp_gpx_trk) if ($opt_t or $opt_c);
                     $gpx_in_trk = 0;
                 }
                 my $separator_type = ord(substr($buffer, 7, $SIZEOF_BYTE));
@@ -865,7 +865,7 @@ sub parse_log_data {
                 #----------------------------------------------------------
                 # Close the current <trk> in GPX.
                 if ($gpx_in_trk) {
-                    gpx_print_trk_end($fp_gpx_trk) if ($opt_t);
+                    gpx_print_trk_end($fp_gpx_trk) if ($opt_t or $opt_c);
                     $gpx_in_trk = 0;
                 }
                 if ($expected_records_sector == 0xffff) {
@@ -1109,27 +1109,27 @@ sub parse_log_data {
 
         # Start a new GPX <trkseg> on satellite lost.
         if (($record_valid == $VALID_NOFIX) and $gpx_in_trk) {
-            gpx_print_trk_end($fp_gpx_trk) if ($opt_t);
+            gpx_print_trk_end($fp_gpx_trk) if ($opt_t or $opt_c);
             $gpx_in_trk = 0;
         }
 
         if (defined($record_latitude) and defined($record_longitude)) {
 	    if ($next_data_force_waypoint) {
 	        # Write <wpt> data in GPX file.
-	        gpx_print_wpt($fp_gpx_wpt) if ($opt_w);
+	        gpx_print_wpt($fp_gpx_wpt) if ($opt_w or $opt_c);
 	        $next_data_force_waypoint = 0;
 	    } else {
                 # Write <trkpt> data in GPX file.
                 if (($record_valid != $VALID_NOFIX) and !($record_rcr & $RCR_BUTTON)) {
                     if (! $gpx_in_trk) {
-                        gpx_print_trk_begin($fp_gpx_trk) if ($opt_t);
+                        gpx_print_trk_begin($fp_gpx_trk) if ($opt_t or $opt_c);
                         $gpx_in_trk = 1;
                     }
-                    gpx_print_trkpt($fp_gpx_trk) if ($opt_t);
+                    gpx_print_trkpt($fp_gpx_trk) if ($opt_t or $opt_c);
                 }
                 # Write <wpt> data in GPX file.
                 if (($record_rcr & $RCR_BUTTON) and ($record_valid != $VALID_NOFIX)) {
-                    gpx_print_wpt($fp_gpx_wpt) if ($opt_w);
+                    gpx_print_wpt($fp_gpx_wpt) if ($opt_w or $opt_c);
                 }
 	    }
         }
@@ -1139,7 +1139,7 @@ sub parse_log_data {
 
     # Eventually close the <trk> GPX tags.
     if ($gpx_in_trk) {
-        gpx_print_trk_end($fp_gpx_trk) if ($opt_t);
+        gpx_print_trk_end($fp_gpx_trk) if ($opt_t or $opt_c);
         $gpx_in_trk = 0;
     }
 
