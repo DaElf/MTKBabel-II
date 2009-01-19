@@ -803,11 +803,10 @@ sub parse_log_data {
                 # End Of File.
                 if (!defined($opt_b)) {
                     printf("ERROR: End of log file! Total record count: %u, expected %u\n", $record_count_total, $expected_records_total);
-                    last;
                 } else {
                     printf("Total record count: %u\n", $record_count_total);
-                    last;
                 }
+                last;
             } 
         }
 
@@ -878,7 +877,11 @@ sub parse_log_data {
                         next; # Search for the next record or record separator.
                     } else {
                         # End Of File.
-                        printf("ERROR: End of log file. Total number of read records: %u, expected %u\n", $record_count_total, $expected_records_total);
+                        if (!defined($opt_b)) {
+                            printf("ERROR: End of log file! Total record count: %u, expected %u\n", $record_count_total, $expected_records_total);
+                        } else {
+                            printf("Total record count: %u\n", $record_count_total); 
+                        }
                         last;
                     } 
                 } else {
