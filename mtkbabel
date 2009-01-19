@@ -225,7 +225,8 @@ if (! getopts('ab:cd:Ef:hl:m:o:p:Rr:s:tvw') or $opt_h) {
 Usage: $NAME [options]
 Options:
     -a                       Read all the log memory (overlapped data)
-    -b filename.bin          Do not read device, read a previously saved .bin file
+    -b filename.bin          Do not read data from a GPS device, but rather read a
+                             previously saved .bin file. Ignore -f option
     -c                       Create a gpx file with tracks and waypoints
     -d debug_level           Debug level: 0..7
     -E                       Erase data log memory
