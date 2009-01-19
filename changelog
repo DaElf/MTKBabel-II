@@ -6,8 +6,11 @@ mtkbabel (0.8)
   * Added timeout and error message for wrong communication speed.
   * Added -c option, to get a GPX file with both tracks and waypoints,
     thanks to Filippo Giunchedi.
+  * Added -i option, to ignore some error conditions and try
+    to extract as much data as possible from the GPS. Thanks
+    to Markus Brückner and Stefan Höhne.
 
- -- Niccolo Rigacci <niccolo@rigacci.org>  Mon, 19 Jan 2009 01:19:21 +0100
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Mon, 19 Jan 2009 18:36:13 +0100
 
 mtkbabel (0.7)
 
