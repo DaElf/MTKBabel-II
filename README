@@ -1,8 +1,10 @@
 ---------------------------------------------------------------------------
 README file for the MTKBabel program
 ---------------------------------------------------------------------------
-Copyright 2007, 2008 Niccolo Rigacci <niccolo@rigacci.org>
+Copyright 2007 - 2009 Niccolo Rigacci <niccolo@rigacci.org>
 Get latest version and other info at:
+
+http://sourceforge.net/projects/mtkbabel
 http://www.rigacci.org/wiki/doku.php/doc/appunti/hardware/gps_logger_i_blue_747
 
 MTKBabel is a Perl program to operate the i-Blue 747 GPS data logger.
@@ -51,6 +53,3 @@ Arm box, with an XScale processor.
 
 The function mtk2number() should be rewritten using some math
 library or in pure Perl.
-
-* Infinite loop: if the device does not respond with proper characeter
-  sequence, the program loops indefinitely. Stop it with Ctrl-C.
