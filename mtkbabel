@@ -1684,7 +1684,8 @@ sub serial_port_open {
     my $port = shift;
     my $baudrate = shift;
     die("Cannot open $port. Did you switch ON the GPS device?\n") if (! -c $port);
-    $device = Device::SerialPort->new($port);
+    $device = Device::SerialPort->new($port)
+        || die "ERROR: Opening serial device $port: $!";
     $device->baudrate($baudrate) || die "fail setting baud rate";
     $device->parity('none')      || die "fail setting parity";
     $device->databits(8)         || die "fail setting databits";
