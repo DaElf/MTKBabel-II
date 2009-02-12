@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.8     2009-01-19
+# Version:      0.8.1   2009-02-12
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -225,27 +225,30 @@ if (! getopts('ab:cd:Ef:hil:m:o:p:Rr:s:tvw') or $opt_h) {
 Usage: $NAME [options]
 Options:
     -a                       Read all the log memory (overlapped data)
-    -b filename.bin          Do not read data from a GPS device, but rather read a
-                             previously saved .bin file. Ignore -f option
-    -c                       Create a gpx file with tracks and waypoints
+    -b filename.bin          Don't read data from a GPS device, but rather read
+                             a previously saved .bin file. Ignore -f option
+    -c                       Create a GPX file with tracks and waypoints
     -d debug_level           Debug level: 0..7
     -E                       Erase data log memory
     -f filename              Base name for saved files (.bin and .gpx)
     -h                       Print this message and exit
-    -i                       Ignore some error conditions and try to extract data
-    -l {on|off}              Turn loggin ON/OFF
+    -i                       Ignore some error conditions, try to extract data
+    -l {on|off}              Turn logging ON/OFF
     -m {stop|overlap}        Set STOP/OVERLAP recording method on memory full
-    -o log_format            Enable or disable log fields (FIELD1,-FIELD2,...), available fields:
+    -o log_format            Enable or disable log fields (FIELD1,-FIELD2,...),
+                             available fields:
                              $str1
                              $str2
     -p port                  Communication port, default: $port
-    -R                       Recover from disabled log: erase data and reset recording criteria
+    -R                       Recover from disabled log: erase data and reset
+                             recording criteria
     -r time:distance:speed   Set logging criteria (zero to disable):
-                             every 1-999 seconds, every 10-9999 meters, over 10-999 km/h
+                             every 1-999 seconds, every 10-9999 meters,
+                             over 10-999 km/h
     -s speed                 Serial port speed, default $baudrate baud
-    -t                       Create a gpx file with tracks
+    -t                       Create a GPX file with tracks
     -v                       Print MTKBabel version and exit
-    -w                       Create a gpx file with waypoints
+    -w                       Create a GPX file with waypoints
 
 Example:
     Download traks and waypoints from GPS device, creating the
