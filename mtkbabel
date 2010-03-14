@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2007 - 2009 Niccolo Rigacci
+# Copyright (C) 2007 - 2010 Niccolo Rigacci
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.8.1   2009-02-12
+# Version:      0.8.2   2010-03-13
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -243,8 +243,8 @@ Options:
     -R                       Recover from disabled log: erase data and reset
                              recording criteria
     -r time:distance:speed   Set logging criteria (zero to disable):
-                             every 1-999 seconds, every 10-9999 meters,
-                             over 10-999 km/h
+                             every 0.10-9999999.90 seconds, every 0.10-9999999.90
+                             meters, over 0.10-9999999.90 km/h
     -s speed                 Serial port speed, default $baudrate baud
     -t                       Create a GPX file with tracks
     -v                       Print MTKBabel version and exit
@@ -310,11 +310,16 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
 #
 # ???                   PMTK705,M-core_1.8,0001
 # 747 ???               PMTK705,B-core_1.1,0002,TSI_747CD,1.0
+# Qstarz BT-Q1000X      PMTK705,AXN_1.0-B_1.3_C01,0003,QST1000,1.0
 # 747 ???               PMTK705,B-core_1.1,0004,TSI747CD,1.0
+# Qstarz BT-Q1000P      PMTK705,B-core_1.1,0005,QST1000P,1.0
 # ???                   PMTK705,M-core_1.85,0008
 # i-Blue 747            PMTK705,M-core_1.94,001B
 # Holux M-241           PMTK705,B-core_1.1,0021,01017-00C,1.0
 # Holux M-241           PMTK705,B-core_1.20,0023,01017-00D,1.0
+# Holum M-241 fw 1.13   PMTK705,B-core_1.20,0043,01017-00F,1.0
+# Qstarz BT-Q1300
+# Qstarz BT-Q1000
 #
 packet_send('PMTK605');
 $ret = packet_wait('PMTK705,');
@@ -372,19 +377,20 @@ if ($opt_r) {
     undef($time)     if ($time     eq '');
     undef($distance) if ($distance eq '');
     undef($speed)    if ($speed    eq '');
-    $time     = int($time    ) if (defined($time));
-    $distance = int($distance) if (defined($distance));
-    $speed    = int($speed   ) if (defined($speed));
-    if (defined($time) and (($time >= 1 and $time <= 999) or ($time == 0))) {
-        packet_send(sprintf('PMTK182,1,3,%u', $time * 10));
+    # Expect floating point values.
+    $time     = eval(1.0 * $time    ) if (defined($time));
+    $distance = eval(1.0 * $distance) if (defined($distance));
+    $speed    = eval(1.0 * $speed   ) if (defined($speed));
+    if (defined($time) and (($time >= 0.10 and $time <= 9999999.90) or ($time == 0))) {
+        packet_send(sprintf('PMTK182,1,3,%u', int($time * 10)));
         packet_wait('PMTK001,182,1,3');
     }
-    if (defined($distance) and (($distance >= 10 and $distance <= 9999) or ($distance == 0))) {
-        packet_send(sprintf('PMTK182,1,4,%u', $distance * 10));
+    if (defined($distance) and (($distance >= 0.10 and $distance <= 9999999.90) or ($distance == 0))) {
+        packet_send(sprintf('PMTK182,1,4,%u', int($distance * 10)));
         packet_wait('PMTK001,182,1,3');
     }
-    if (defined($speed) and (($speed >= 10 and $speed <= 999) or ($speed == 0))) {
-        packet_send(sprintf('PMTK182,1,5,%u', $speed * 10));
+    if (defined($speed) and (($speed >= 0.10 and $speed <= 9999999.90) or ($speed == 0))) {
+        packet_send(sprintf('PMTK182,1,5,%u', int($speed * 10)));
         packet_wait('PMTK001,182,1,3');
     }
 }
@@ -817,10 +823,12 @@ sub parse_log_data {
 
         #------------------------------------------------------------------
         # Check for:
-        # - record separator:        AAAAAAAAAAAAAAXXYYYYYYYYBBBBBBBB
-        # - non written space:       FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        # - Holux M-241 separators : HOLUXGR241LOGGER
-        #                            HOLUXGR241WAYPNT
+        # - record separator:          "AAAAAAAAAAAAAAXXYYYYYYYYBBBBBBBB"
+        # - non written space:         "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        # - Holux M-241 separators:    "HOLUXGR241LOGGER"
+        #                              "HOLUXGR241WAYPNT"
+        # - Holux M-241 fw 1.13 sep.:  "HOLUXGR241LOGGER    "
+        #                              "HOLUXGR241WAYPNT    "
         #------------------------------------------------------------------
         if (($log_len - tell($fp)) >= $SIZEOF_SEPARATOR) {
 
@@ -850,6 +858,14 @@ sub parse_log_data {
                 #----------------------------------------------------------
                 printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
                 $model_id = '0021';
+                if (($log_len - tell($fp)) >= 4) {
+                    $buffer = my_read($fp, 4);
+                    if ($buffer eq '    ') {
+                        $model_id = '0043';
+                    } else {
+                        seek($fp, -4, 1);
+                    }
+                }
                 set_data_types($model_id);
                 next;
 
@@ -859,6 +875,14 @@ sub parse_log_data {
                 #----------------------------------------------------------
                 printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
                 $model_id = '0021';
+                if (($log_len - tell($fp)) >= 4) {
+                    $buffer = my_read($fp, 4);
+                    if ($buffer eq '    ') {
+                        $model_id = '0043';
+                    } else {
+                        seek($fp, -4, 1);
+                    }
+                }
                 set_data_types($model_id);
                 $next_data_force_waypoint = 1;
                 next;
@@ -1664,16 +1688,20 @@ sub log_time {
 #-------------------------------------------------------------------------
 sub flash_memory_size {
     my $model = shift;
-    return( 8 * 1024 * 1024 / 8) if ($model == 0x1388); # 757/ZI v1        8 Mbit = 1 Mb
-    return( 8 * 1024 * 1024 / 8) if ($model == 0x5202); # 757/ZI v2        8 Mbit = 1 Mb
-    return(32 * 1024 * 1024 / 8) if ($model == 0x8300); # Qstartz BT-1200 32 Mbit = 4 Mb
+    # 8 Mbit = 1 Mb
+    return( 8 * 1024 * 1024 / 8) if ($model == 0x1388); # 757/ZI v1
+    return( 8 * 1024 * 1024 / 8) if ($model == 0x5202); # 757/ZI v2
+    # 32 Mbit = 4 Mb
     return(32 * 1024 * 1024 / 8) if ($model == 0x0008); # Pentagram PathFinder P 3106
-    # 0x0051    i-Blue 737, Qstartz 810, Polaris iBT-GPS, Holux M1000
-    # 0x0002    Qstartz 815
+    return(32 * 1024 * 1024 / 8) if ($model == 0x0005); # Qstarz BT-Q1000P
+    return(32 * 1024 * 1024 / 8) if ($model == 0x8300); # Qstarz BT-1200
+    # 16Mbit -> 2Mb
+    # 0x0051    i-Blue 737, Qstarz 810, Polaris iBT-GPS, Holux M1000
+    # 0x0002    Qstarz 815
     # 0x001b    i-Blue 747
     # 0x001d    BT-Q1000 / BGL-32
     # 0x0131    EB-85A
-    return(16 * 1024 * 1024 / 8); # 16Mbit -> 2Mb
+    return(16 * 1024 * 1024 / 8);
 }
 
 #-------------------------------------------------------------------------
@@ -1725,7 +1753,8 @@ sub set_data_types {
 
     if ($model_id eq '0005' or
         $model_id eq '0021' or
-        $model_id eq '0023')
+        $model_id eq '0023' or
+        $model_id eq '0043')
     {
         printf("Setting log format and data types for Holum M-241, model ID %s\n", $model_id) if ($debug >= $LOG_INFO);
         $LOG_HAS_CHECKSUM_SEPARATOR = 0;
