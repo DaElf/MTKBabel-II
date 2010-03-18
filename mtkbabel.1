@@ -6,8 +6,8 @@ mtkbabel \- Tool for managing GPS data loggers based on the MTK chip
 .SH DESCRIPTION
 .B mtkbabel
 is a command line program to operate GPS data loggers based on the MediaTek MTK chip.
-It was tested on the i-Blue 747 and on the Holux M-241, it should work also with other
-GPS devices based on the same chip.
+It was tested on the i-Blue 747, Qstarz BT-Q1000 and on the Holux M-241, it should
+work also with other GPS devices based on the same chip.
 .sp
 The main features are:
  - Command line interface
@@ -124,8 +124,10 @@ Communication port, default:
 Recover from disabled log: erase data and reset recording criteria.
 .TP
 .BR "\-r" " time:distance:speed"
-Set logging criteria (zero to disable): every 1-999 seconds, every 10-9999
-meters, over 10-999 km/h.
+Set logging criteria (zero to disable): every 0.10-9999999.90 seconds,
+every 0.10-9999999.90 meters, over 0.10-9999999.90 km/h. Not all the devices
+support such wide ranges, more reasonable values are 1-999 seconds,
+10-9999 meters and 10-999 km/h.
 .TP
 .BR "\-s" " speed"
 Serial port speed, default
