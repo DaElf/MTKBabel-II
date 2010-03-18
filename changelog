@@ -1,3 +1,14 @@
+mtkbabel (0.8.1)
+
+  * Added some GPS models to known flash memory size.
+  * Changed range of loggin criteria, allowing floating point values
+    from 0.10 to 9999999.90, thanks to Stanislav Brabec.
+  * Added support for Holux M-241 firmware 1.13, thanks to Stefan
+    Schöfegger and Luca Niccoli.
+  * Error message for device open errors.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Thu, 18 Mar 2010 19:05:05 +0100
+
 mtkbabel (0.8)
 
   * Allow more time for the -E and -R commands to execute.
