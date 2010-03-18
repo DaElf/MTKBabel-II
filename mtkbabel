@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.8.2   2010-03-13
+# Version:      0.8.1   2010-03-18
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -263,7 +263,7 @@ HELP
 #-------------------------------------------------------------------------
 # Check command line options.
 #-------------------------------------------------------------------------
-if ($opt_v) { print "\nMTKBabel Version 0.8\n\n"; exit }
+if ($opt_v) { print "\nMTKBabel Version 0.8.1\n\n"; exit }
 $debug    = $opt_d if (defined($opt_d) and ($opt_d >= $LOG_EMERG) and ($opt_d <= $LOG_DEBUG));
 $port     = $opt_p if (defined($opt_p));
 $baudrate = int($opt_s) if (defined($opt_s));
