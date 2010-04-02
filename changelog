@@ -4,9 +4,9 @@ mtkbabel (0.8.2)
     thanks to Thomas Siedlich.
   * Added support for the Holux M-1200E, which does not embed
     the Holux string into the binary data. A new -x switch is
-    required to read back such data.
+    required to read back such data. Thanks to Paulius Zaleckas.
 
- -- Niccolo Rigacci <niccolo@rigacci.org>  Fri, 02 Apr 2010 21:32:32 +0200
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Sat, 03 Apr 2010 01:38:34 +0200
 
 mtkbabel (0.8.1)
 
