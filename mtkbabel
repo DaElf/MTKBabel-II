@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.8.1   2010-03-18
+# Version:      0.8.2   2010-04-02
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -29,7 +29,7 @@ use strict;
 use File::Basename;
 # Use the getopts() function.
 use Getopt::Std;
-use vars qw($opt_a $opt_b $opt_c $opt_d $opt_E $opt_f $opt_h $opt_i $opt_l $opt_m $opt_o $opt_p $opt_R $opt_r $opt_s $opt_t $opt_v $opt_w);
+use vars qw($opt_a $opt_b $opt_c $opt_d $opt_E $opt_f $opt_h $opt_i $opt_l $opt_m $opt_o $opt_p $opt_R $opt_r $opt_s $opt_t $opt_v $opt_w $opt_x);
 # Install the libdevice-serialport-perl Debian package.
 use Device::SerialPort;
 # Install the libtimedate-perl Debian package.
@@ -218,7 +218,7 @@ my $record_distance;
 #-------------------------------------------------------------------------
 # Get options from command line.
 #-------------------------------------------------------------------------
-if (! getopts('ab:cd:Ef:hil:m:o:p:Rr:s:tvw') or $opt_h) {
+if (! getopts('ab:cd:Ef:hil:m:o:p:Rr:s:tvwx') or $opt_h) {
     my $str1 = describe_log_format(0x00fff);
     my $str2 = describe_log_format(0xff000);
     print <<HELP;
@@ -249,6 +249,7 @@ Options:
     -t                       Create a GPX file with tracks
     -v                       Print MTKBabel version and exit
     -w                       Create a GPX file with waypoints
+    -x                       Force reading Holux format
 
 Example:
     Download traks and waypoints from GPS device, creating the
@@ -270,6 +271,14 @@ $baudrate = int($opt_s) if (defined($opt_s));
 $opt_f    = substr($opt_f, 0, -4) if (substr($opt_f, -4) eq '.bin');
 $opt_b    = substr($opt_b, 0, -4) if (substr($opt_b, -4) eq '.bin');
 
+#-------------------------------------------------------------------------
+# Force Holux format. Required to read a binary file because some
+# Holux devices does not embed Holux identifier into the data.
+#-------------------------------------------------------------------------
+if ($opt_x) {
+    $model_id = '0000';
+    set_data_types($model_id);
+}
 
 #-------------------------------------------------------------------------
 # Do not open the device, read instead an existing binary log file.
@@ -308,6 +317,7 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
 
 # Query firmware release (PMTK_Q_RELEASE). Examples:
 #
+# Holux M-1200E         PMTK705,AXN_1.30-B_1.3_C01,0000,01035-01A,1.0
 # ???                   PMTK705,M-core_1.8,0001
 # 747 ???               PMTK705,B-core_1.1,0002,TSI_747CD,1.0
 # Qstarz BT-Q1000X      PMTK705,AXN_1.0-B_1.3_C01,0003,QST1000,1.0
@@ -329,7 +339,9 @@ if ($ret =~ m/PMTK705,([\.0-9A-Za-z_-]+),([0-9A-Za-z]+)[,\*]/) {
 }
 
 printf "MTK Firmware: Version: $version, Release: $release, Model ID: $model_id\n";
-set_data_types($model_id);
+if (! $opt_x) {
+    set_data_types($model_id);
+}
 
 #-------------------------------------------------------------------------
 # Erase memory.
@@ -1692,8 +1704,9 @@ sub flash_memory_size {
     return( 8 * 1024 * 1024 / 8) if ($model == 0x1388); # 757/ZI v1
     return( 8 * 1024 * 1024 / 8) if ($model == 0x5202); # 757/ZI v2
     # 32 Mbit = 4 Mb
-    return(32 * 1024 * 1024 / 8) if ($model == 0x0008); # Pentagram PathFinder P 3106
+    return(32 * 1024 * 1024 / 8) if ($model == 0x0000); # Holux M-1200E
     return(32 * 1024 * 1024 / 8) if ($model == 0x0005); # Qstarz BT-Q1000P
+    return(32 * 1024 * 1024 / 8) if ($model == 0x0008); # Pentagram PathFinder P 3106
     return(32 * 1024 * 1024 / 8) if ($model == 0x8300); # Qstarz BT-1200
     # 16Mbit -> 2Mb
     # 0x0051    i-Blue 737, Qstarz 810, Polaris iBT-GPS, Holux M1000
@@ -1751,12 +1764,13 @@ sub set_data_types {
 
     my $model_id = shift;
 
-    if ($model_id eq '0005' or
+    if ($model_id eq '0000' or
+        $model_id eq '0005' or
         $model_id eq '0021' or
         $model_id eq '0023' or
         $model_id eq '0043')
     {
-        printf("Setting log format and data types for Holum M-241, model ID %s\n", $model_id) if ($debug >= $LOG_INFO);
+        printf("Setting log format and data types for Holux, model ID %s\n", $model_id) if ($debug >= $LOG_INFO);
         $LOG_HAS_CHECKSUM_SEPARATOR = 0;
         $SIZEOF_LOG_LATITUDE  = $SIZEOF_FLOAT;
         $SIZEOF_LOG_LONGITUDE = $SIZEOF_FLOAT;
