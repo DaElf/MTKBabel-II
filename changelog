@@ -1,3 +1,13 @@
+mtkbabel (0.8.2)
+
+  * Added flash memory size for 747 A+ GPS Trip Recorder,
+    thanks to Thomas Siedlich.
+  * Added support for the Holux M-1200E, which does not embed
+    the Holux string into the binary data. A new -x switch is
+    required to read back such data.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Fri, 02 Apr 2010 21:32:32 +0200
+
 mtkbabel (0.8.1)
 
   * Added some GPS models to known flash memory size.
