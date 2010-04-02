@@ -323,6 +323,7 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
 # Qstarz BT-Q1000X      PMTK705,AXN_1.0-B_1.3_C01,0003,QST1000,1.0
 # 747 ???               PMTK705,B-core_1.1,0004,TSI747CD,1.0
 # Qstarz BT-Q1000P      PMTK705,B-core_1.1,0005,QST1000P,1.0
+# 747 A+ Trip Recorder  PMTK705,AXN_1.0-B_1.3_C01,0006
 # ???                   PMTK705,M-core_1.85,0008
 # i-Blue 747            PMTK705,M-core_1.94,001B
 # Holux M-241           PMTK705,B-core_1.1,0021,01017-00C,1.0
@@ -1706,6 +1707,7 @@ sub flash_memory_size {
     # 32 Mbit = 4 Mb
     return(32 * 1024 * 1024 / 8) if ($model == 0x0000); # Holux M-1200E
     return(32 * 1024 * 1024 / 8) if ($model == 0x0005); # Qstarz BT-Q1000P
+    return(32 * 1024 * 1024 / 8) if ($model == 0x0006); # 747 A+ GPS Trip Recorder
     return(32 * 1024 * 1024 / 8) if ($model == 0x0008); # Pentagram PathFinder P 3106
     return(32 * 1024 * 1024 / 8) if ($model == 0x8300); # Qstarz BT-1200
     # 16Mbit -> 2Mb
