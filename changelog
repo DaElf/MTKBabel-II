@@ -1,3 +1,9 @@
+mtkbabel (svn)
+
+  * Added binmode() call when opening binary files.
+
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Sat, 25 Sep 2010 11:13:58 +0200
+
 mtkbabel (0.8.2)
 
   * Added flash memory size for 747 A+ GPS Trip Recorder,

@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.8.2   2010-04-02
+# Version:      svn   2010-09-25
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -545,6 +545,7 @@ if ($opt_f and ($opt_t or $opt_w or $opt_c)) {
 
     printf(">> Retrieving %u (0x%08X) bytes of log data from device...\n", $bytes_to_read, $bytes_to_read);
     open($fp_log, ">${opt_f}.bin") or die("Cannot open file ${opt_f}.bin: $!");
+    binmode($fp_log);
 
     # Avoid reading the entire memory if we find a non-written sector.
     $non_written_sector_found = 0;
@@ -785,6 +786,7 @@ sub parse_log_data {
 
     # Open the binary log file for reading.
     open($fp, "${opt_f}.bin") or die("ERROR reading ${opt_f}.bin: $!");
+    binmode($fp);
     seek($fp, 0, 2) or die;
     $log_len = tell($fp);
     seek($fp, 0, 0) or die;
