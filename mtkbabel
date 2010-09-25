@@ -328,7 +328,7 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
 # i-Blue 747            PMTK705,M-core_1.94,001B
 # Holux M-241           PMTK705,B-core_1.1,0021,01017-00C,1.0
 # Holux M-241           PMTK705,B-core_1.20,0023,01017-00D,1.0
-# Holum M-241 fw 1.13   PMTK705,B-core_1.20,0043,01017-00F,1.0
+# Holux M-241 fw 1.13   PMTK705,B-core_1.20,0043,01017-00F,1.0
 # Qstarz BT-Q1300
 # Qstarz BT-Q1000
 #
@@ -1716,7 +1716,7 @@ sub flash_memory_size {
     # 0x0051    i-Blue 737, Qstarz 810, Polaris iBT-GPS, Holux M1000
     # 0x0002    Qstarz 815
     # 0x001b    i-Blue 747
-    # 0x001d    BT-Q1000 / BGL-32
+    # 0x001d    Qstarz BT-Q1000 / BGL-32
     # 0x0131    EB-85A
     return(16 * 1024 * 1024 / 8);
 }
