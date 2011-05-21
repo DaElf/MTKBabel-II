@@ -1,8 +1,10 @@
-mtkbabel (svn)
+mtkbabel (0.8.3)
 
+  * Fixed a bug in identifying model (and flash memory size).
+  * Added iBlue 747A+ to the known models, thanks to Bastiaan Naber.
   * Added binmode() call when opening binary files.
 
- -- Niccolo Rigacci <niccolo@rigacci.org>  Sat, 25 Sep 2010 11:13:58 +0200
+ -- Niccolo Rigacci <niccolo@rigacci.org>  Sat, 21 May 2011 15:16:39 +0200
 
 mtkbabel (0.8.2)
 
