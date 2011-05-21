@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2007 - 2010 Niccolo Rigacci
+# Copyright (C) 2007 - 2011 Niccolo Rigacci
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      svn   2010-09-25
+# Version:      0.8.3   2011-05-21
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -324,6 +324,7 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
 # 747 ???               PMTK705,B-core_1.1,0004,TSI747CD,1.0
 # Qstarz BT-Q1000P      PMTK705,B-core_1.1,0005,QST1000P,1.0
 # 747 A+ Trip Recorder  PMTK705,AXN_1.0-B_1.3_C01,0006
+# iBlue 747A+           PMTK705,AXN_1.30-B_1.3_C01,000F,TSI_747A+,1.0
 # ???                   PMTK705,M-core_1.85,0008
 # i-Blue 747            PMTK705,M-core_1.94,001B
 # Holux M-241           PMTK705,B-core_1.1,0021,01017-00C,1.0
@@ -1702,7 +1703,8 @@ sub log_time {
 # Return the flash memory size upon model ID.
 #-------------------------------------------------------------------------
 sub flash_memory_size {
-    my $model = shift;
+    my $string = shift;
+    my $model = hex('0x' . $string);
     # 8 Mbit = 1 Mb
     return( 8 * 1024 * 1024 / 8) if ($model == 0x1388); # 757/ZI v1
     return( 8 * 1024 * 1024 / 8) if ($model == 0x5202); # 757/ZI v2
@@ -1711,6 +1713,7 @@ sub flash_memory_size {
     return(32 * 1024 * 1024 / 8) if ($model == 0x0005); # Qstarz BT-Q1000P
     return(32 * 1024 * 1024 / 8) if ($model == 0x0006); # 747 A+ GPS Trip Recorder
     return(32 * 1024 * 1024 / 8) if ($model == 0x0008); # Pentagram PathFinder P 3106
+    return(32 * 1024 * 1024 / 8) if ($model == 0x000F); # iBlue 747A+
     return(32 * 1024 * 1024 / 8) if ($model == 0x8300); # Qstarz BT-1200
     # 16Mbit -> 2Mb
     # 0x0051    i-Blue 737, Qstarz 810, Polaris iBT-GPS, Holux M1000
