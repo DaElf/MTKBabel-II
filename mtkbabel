@@ -1790,7 +1790,6 @@ sub set_data_types {
     my $model_id = shift;
 
     if ($model_id eq '0000' or
-        $model_id eq '0005' or
         $model_id eq '0021' or
         $model_id eq '0023' or
         $model_id eq '0043' or
