@@ -320,6 +320,7 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
 # Query firmware release (PMTK_Q_RELEASE). Examples:
 #
 # Holux M-1200E         PMTK705,AXN_1.30-B_1.3_C01,0000,01035-01A,1.0
+# Holux GPSport 245     PMTK705,M-core_2.12,0000,GR-245,1.0
 # ???                   PMTK705,M-core_1.8,0001
 # 747 ???               PMTK705,B-core_1.1,0002,TSI_747CD,1.0
 # Qstarz BT-Q1000X      PMTK705,AXN_1.0-B_1.3_C01,0003,QST1000,1.0
@@ -775,6 +776,8 @@ sub parse_log_data {
     my $new_offset;
     my $log_format;
     my $checksum;
+    my $trailing_spaces;
+    my $sep_model;
 
     my $expected_records_sector  = 0;
     my $record_count_sector      = 0;
@@ -849,6 +852,9 @@ sub parse_log_data {
         # - Holux M-241 fw 1.13 sep.:  "HOLUXGR241LOGGER    "
         #                              "HOLUXGR241WAYPNT    "
         # - Holux Holux M-1200E sep.:  "HOLUXM1200WAYPNT    "
+        #
+        # - Holux GPSport GR-245 sep.: "HOLUXGR245LOGGER    "
+        #                              "HOLUXGR245WAYPNT    "
         #------------------------------------------------------------------
         if (($log_len - tell($fp)) >= $SIZEOF_SEPARATOR) {
 
@@ -872,50 +878,39 @@ sub parse_log_data {
                 }
                 next; # Search for the next record or record separator.
 
-            } elsif ($buffer eq 'HOLUXGR241LOGGER') {
+            } elsif (substr($buffer, 0, 5) eq 'HOLUX') {
                 #----------------------------------------------------------
-                # Found Holux M-241 separator
+                # Found Holux separator.
                 #----------------------------------------------------------
                 printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
-                $model_id = '0021';
+
+                # Sarch for trailig four spaces after the separator.
+                $trailing_spaces = 0;
                 if (($log_len - tell($fp)) >= 4) {
-                    $buffer = my_read($fp, 4);
-                    if ($buffer eq '    ') {
-                        $model_id = '0043';
+                    if (my_read($fp, 4) eq '    ') {
+                        $trailing_spaces = 1;
                     } else {
                         seek($fp, -4, 1);
                     }
                 }
-                set_data_types($model_id);
-                next;
 
-            } elsif ($buffer eq 'HOLUXGR241WAYPNT' or
-                     $buffer eq 'HOLUXM1200WAYPNT') {
-                #----------------------------------------------------------
-                # Found Holux M-241 or M-1200E separator for waypoint.
-                #----------------------------------------------------------
-                printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
-                if ($buffer eq 'HOLUXM1200WAYPNT') {
-                    $model_id = '0000'; # M-1200E
-                    if (($log_len - tell($fp)) >= 4) {
-                        $buffer = my_read($fp, 4);
-                        if ($buffer ne '    ') {
-                            seek($fp, -4, 1);
-                        }
-                    }
-                } else {
+                # Define $model_id upon separator string.
+                $sep_model = substr($buffer, 5,  5);
+                if ($sep_model eq 'GR241' and $trailing_spaces) {
+                    $model_id = '0043'; # M-241 fw 1.13
+                } elsif ($sep_model eq 'GR241') {
                     $model_id = '0021'; # M-241
-                    if (($log_len - tell($fp)) >= 4) {
-                        $buffer = my_read($fp, 4);
-                        if ($buffer eq '    ') {
-                            $model_id = '0043'; # M-241 fw 1.13
-                        } else {
-                            seek($fp, -4, 1);
-                        }
-                    }
+                } elsif ($sep_model eq 'GR245' or $sep_model eq 'M1200') {
+                    $model_id = '0000'; # M-1200E or GPSport 245
+                } else {
+                    $model_id = '0021'; # Unknown Holux model, assume M-241
                 }
                 set_data_types($model_id);
-                $next_data_force_waypoint = 1;
+
+                # Check if the following data is a waypoint.
+                if (substr($buffer, 10, 6) eq 'WAYPNT') {
+                    $next_data_force_waypoint = 1;
+                }
                 next;
 
             } elsif ($buffer eq (chr(0xff) x $SIZEOF_SEPARATOR)) {
