@@ -18,7 +18,7 @@
 #
 # Author:       Niccolo Rigacci <niccolo@rigacci.org>
 #
-# Version:      0.8.3   2011-05-21
+# Version:      0.8.3.1   2011-07-24
 #
 # Control program for GPS units using the MediaTek (MTK) chipset.
 # Tested to work with i-Blue 747 and Holux M-241 GPS data loggers.
@@ -264,7 +264,7 @@ HELP
 #-------------------------------------------------------------------------
 # Check command line options.
 #-------------------------------------------------------------------------
-if ($opt_v) { print "\nMTKBabel Version 0.8.2\n\n"; exit }
+if ($opt_v) { print "\nMTKBabel Version 0.8.3.1\n\n"; exit }
 $debug    = $opt_d if (defined($opt_d) and ($opt_d >= $LOG_EMERG) and ($opt_d <= $LOG_DEBUG));
 $port     = $opt_p if (defined($opt_p));
 $baudrate = int($opt_s) if (defined($opt_s));
@@ -330,6 +330,7 @@ if ($ret =~ m/PMTK001,604,([0-9A-Za-z]+)\*/) {
 # Holux M-241           PMTK705,B-core_1.1,0021,01017-00C,1.0
 # Holux M-241           PMTK705,B-core_1.20,0023,01017-00D,1.0
 # Holux M-241 fw 1.13   PMTK705,B-core_1.20,0043,01017-00F,1.0
+# Holux M-1000C         PMTK705,AXN_1.30-B_1.3_C01,005C
 # Qstarz BT-Q1300
 # Qstarz BT-Q1000
 #
@@ -1714,6 +1715,7 @@ sub flash_memory_size {
     return(32 * 1024 * 1024 / 8) if ($model == 0x0006); # 747 A+ GPS Trip Recorder
     return(32 * 1024 * 1024 / 8) if ($model == 0x0008); # Pentagram PathFinder P 3106
     return(32 * 1024 * 1024 / 8) if ($model == 0x000F); # iBlue 747A+
+    return(32 * 1024 * 1024 / 8) if ($model == 0x005C); # Holux M-1000C
     return(32 * 1024 * 1024 / 8) if ($model == 0x8300); # Qstarz BT-1200
     # 16Mbit -> 2Mb
     # 0x0051    i-Blue 737, Qstarz 810, Polaris iBT-GPS, Holux M1000
@@ -1775,7 +1777,8 @@ sub set_data_types {
         $model_id eq '0005' or
         $model_id eq '0021' or
         $model_id eq '0023' or
-        $model_id eq '0043')
+        $model_id eq '0043' or
+        $model_id eq '005C')
     {
         printf("Setting log format and data types for Holux, model ID %s\n", $model_id) if ($debug >= $LOG_INFO);
         $LOG_HAS_CHECKSUM_SEPARATOR = 0;
