@@ -29,7 +29,7 @@ use strict;
 use File::Basename;
 # Use the getopts() function.
 use Getopt::Std;
-use vars qw($opt_a $opt_b $opt_c $opt_d $opt_E $opt_f $opt_h $opt_i $opt_l $opt_m $opt_o $opt_p $opt_R $opt_r $opt_s $opt_t $opt_v $opt_w $opt_x);
+use vars qw($opt_a $opt_b $opt_c $opt_d $opt_E $opt_f $opt_h $opt_i $opt_I $opt_l $opt_m $opt_o $opt_p $opt_R $opt_r $opt_s $opt_t $opt_v $opt_w $opt_x);
 # Install the libdevice-serialport-perl Debian package.
 use Device::SerialPort;
 # Install the libtimedate-perl Debian package.
@@ -218,7 +218,7 @@ my $record_distance;
 #-------------------------------------------------------------------------
 # Get options from command line.
 #-------------------------------------------------------------------------
-if (! getopts('ab:cd:Ef:hil:m:o:p:Rr:s:tvwx') or $opt_h) {
+if (! getopts('ab:cd:Ef:hiIl:m:o:p:Rr:s:tvwx') or $opt_h) {
     my $str1 = describe_log_format(0x00fff);
     my $str2 = describe_log_format(0xff000);
     print <<HELP;
@@ -233,6 +233,7 @@ Options:
     -f filename              Base name for saved files (.bin and .gpx)
     -h                       Print this message and exit
     -i                       Ignore some error conditions, try to extract data
+    -I                       Same as -i, but also write bad records in GPX
     -l {on|off}              Turn logging ON/OFF
     -m {stop|overlap}        Set STOP/OVERLAP recording method on memory full
     -o log_format            Enable or disable log fields (FIELD1,-FIELD2,...),
@@ -265,6 +266,7 @@ HELP
 # Check command line options.
 #-------------------------------------------------------------------------
 if ($opt_v) { print "\nMTKBabel Version 0.8.3.1\n\n"; exit }
+if ($opt_I) { $opt_i = 1; }
 $debug    = $opt_d if (defined($opt_d) and ($opt_d >= $LOG_EMERG) and ($opt_d <= $LOG_DEBUG));
 $port     = $opt_p if (defined($opt_p));
 $baudrate = int($opt_s) if (defined($opt_s));
@@ -846,6 +848,7 @@ sub parse_log_data {
         #                              "HOLUXGR241WAYPNT"
         # - Holux M-241 fw 1.13 sep.:  "HOLUXGR241LOGGER    "
         #                              "HOLUXGR241WAYPNT    "
+        # - Holux Holux M-1200E sep.:  "HOLUXM1200WAYPNT    "
         #------------------------------------------------------------------
         if (($log_len - tell($fp)) >= $SIZEOF_SEPARATOR) {
 
@@ -886,18 +889,29 @@ sub parse_log_data {
                 set_data_types($model_id);
                 next;
 
-            } elsif ($buffer eq 'HOLUXGR241WAYPNT') {
+            } elsif ($buffer eq 'HOLUXGR241WAYPNT' or
+                     $buffer eq 'HOLUXM1200WAYPNT') {
                 #----------------------------------------------------------
-                # Found Holux M-241 separator for waypoint.
+                # Found Holux M-241 or M-1200E separator for waypoint.
                 #----------------------------------------------------------
                 printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
-                $model_id = '0021';
-                if (($log_len - tell($fp)) >= 4) {
-                    $buffer = my_read($fp, 4);
-                    if ($buffer eq '    ') {
-                        $model_id = '0043';
-                    } else {
-                        seek($fp, -4, 1);
+                if ($buffer eq 'HOLUXM1200WAYPNT') {
+                    $model_id = '0000'; # M-1200E
+                    if (($log_len - tell($fp)) >= 4) {
+                        $buffer = my_read($fp, 4);
+                        if ($buffer ne '    ') {
+                            seek($fp, -4, 1);
+                        }
+                    }
+                } else {
+                    $model_id = '0021'; # M-241
+                    if (($log_len - tell($fp)) >= 4) {
+                        $buffer = my_read($fp, 4);
+                        if ($buffer eq '    ') {
+                            $model_id = '0043'; # M-241 fw 1.13
+                        } else {
+                            seek($fp, -4, 1);
+                        }
                     }
                 }
                 set_data_types($model_id);
@@ -1148,6 +1162,7 @@ sub parse_log_data {
             if ($buffer ne '*') {
                 printf("ERROR: Checksum separator error: expected char 0x%02X, found 0x%02X\n", ord('*'), ord($buffer));
                 last if (! $opt_i);
+                next if (! $opt_I);
             }
         }
         # Read and verify checksum.
@@ -1155,6 +1170,7 @@ sub parse_log_data {
         if ($checksum != ord($buffer)) {
             printf("ERROR: Record checksum error: expected 0x%02X, computed 0x%02X\n", ord($buffer), $checksum);
             last if (! $opt_i);
+            next if (! $opt_I);
         }
 
         # Start a new GPX <trkseg> on satellite lost.
