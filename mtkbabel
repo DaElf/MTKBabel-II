@@ -158,7 +158,7 @@ my $TIMEOUT_IDLE_PORT = 5000;
 my $LOG_HAS_CHECKSUM_SEPARATOR = 1;
 
 #-------------------------------------------------------------------------
-# Global variablee.
+# Global variables.
 #-------------------------------------------------------------------------
 my $debug    = $LOG_ERR;         # Default loggin level.
 my $port     = '/dev/ttyUSB0';   # Default communication port.
@@ -189,11 +189,9 @@ my $rec_method;
 my $fail_sectors;
 my $sectors;
 my $bytes_to_read;
-my $fp;
 my $fp_log;
 my $offset;
 my $non_written_sector_found;
-my $next_data_force_waypoint;
 
 # Record values.
 my $record_utc;
@@ -253,7 +251,7 @@ Options:
     -x                       Force reading Holux format
 
 Example:
-    Download traks and waypoints from GPS device, creating the
+    Download tracks and waypoints from GPS device, creating the
     following files: gpsdata.bin, gpsdata_trk.gpx and gpsdata_wpt.gpx.
 
     mtkbabel -s 115200 -f gpsdata -t -w
@@ -691,7 +689,6 @@ sub packet_wait {
     my $max_time;
     my $pkt;
     my $len;
-    my $i;
 
     $len = length($pkt_type);
 
@@ -766,7 +763,6 @@ sub write_log_packet {
 #-------------------------------------------------------------------------
 sub parse_log_data {
 
-    my $i;
     my $fp;
     my $fp_gpx;
     my $fp_gpx_trk;
@@ -884,7 +880,7 @@ sub parse_log_data {
                 #----------------------------------------------------------
                 printf("Separator: %s\n", $buffer) if ($debug >= $LOG_INFO);
 
-                # Sarch for trailig four spaces after the separator.
+                # Search for trailig four spaces after the separator.
                 $trailing_spaces = 0;
                 if (($log_len - tell($fp)) >= 4) {
                     if (my_read($fp, 4) eq '    ') {
